@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<opencv_storage>
+<skipFrames>0</skipFrames>
+<frameRate>15</frameRate>
+<preFrames>300</preFrames>
+<scaleRate>2</scaleRate>
+<isScale>0</isScale>
+<detectCon>0</detectCon>
+<detectPe>0</detectPe>
+<detectWrongw>0</detectWrongw>
+<detectSlow>1</detectSlow>
+<detectStop>0</detectStop>
+<debug>0</debug>
+</opencv_storage>
