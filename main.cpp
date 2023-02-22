@@ -4,19 +4,12 @@
 #include <string>
 #include <time.h> 
 
-#include "GFM.h"
-#include "DCFG.h"
-#include "package_tracking/BlobTracking.h"
 #include "ChromacityShadRem.h"
 #include "GeometryShadRem.h"
 #include "LrTextureShadRem.h"
 #include "PhysicalShadRem.h"
 #include "SrTextureShadRem.h"
-#include "MultilayerShadRem.h"
 #include "MCSS.h"
-#include "Shadow.h"
-#include "Shadow2.h"
-#include "Speed.h"
 #include "MovingShadRem.h"
 
 using namespace cv;
@@ -32,7 +25,6 @@ void loadConfig(char* ch);
 
 
 //Parameters
-bool detect_con, detect_slow, detect_stop, detect_wrongw, detect_pe;
 int skipFrames = 0;
 int frameRate = 15;
 bool scale = false;
@@ -50,14 +42,14 @@ int main(int argc, char **argv) {
 
 	loadConfig("./Src/config/config.xml");
 
-	Mat frame, input, diff, bg, mask;
+	Mat frame, bg, mask;
 	Mat img_blob;
 
 	//-- different shadow detections
-	cv::Mat chrMask, phyMask, geoMask, srTexMask, lrTexMask, mulTexMask, fgrMask, shadMask, shad2Mask, msrMask, hsvFrame;
+	cv::Mat chrMask, phyMask, geoMask, srTexMask, lrTexMask, mulTexMask, fgrMask, msrMask, hsvFrame;
 
 	//-- different background subtractions
-	Mat fgMaskMOG, fgMaskMOG2, fgMaskGMG, fgMaskKNN, fgMaskGSOC, fgMaskLSBP, fgMaskCNT, fgMaskGFM, fgMaskDCFG;
+	Mat fgMaskMOG, fgMaskMOG2, fgMaskGMG, fgMaskKNN, fgMaskGSOC, fgMaskLSBP, fgMaskCNT;
 	Ptr< BackgroundSubtractor> pMOG = cv::bgsegm::createBackgroundSubtractorMOG();
 	Ptr< BackgroundSubtractor> pMOG2 = createBackgroundSubtractorMOG2(500,16,false);
 	Ptr< BackgroundSubtractor> pGMG = cv::bgsegm::createBackgroundSubtractorGMG();
@@ -91,7 +83,7 @@ int main(int argc, char **argv) {
 		throw "ERROR: video cannot be opened";
 	}
 
-	//-- set shadow methods parameters
+	//-- set shadow methods parameters for fgr
 	p = fgr.getParameters();
 	p.alpha = 0.000621;
 	p.threshold1 = 1.7;
@@ -110,10 +102,7 @@ int main(int argc, char **argv) {
 	if (scale)
 		cv::resize(frame, frame, cv::Size(), 1.0 / scaleRate, 1.0 / scaleRate);
 
-	Shadow* shadow = new Shadow(frame.size());
-	Shadow2* shadow2 = new Shadow2(frame.size());
 	MovingShadRem* msr = new MovingShadRem(frame);
-	DCFG* dcfg = new DCFG(frame);
 	
 
 	std::cout << vname << endl;
@@ -147,38 +136,6 @@ int main(int argc, char **argv) {
 	VideoWriter write25("./results/" + vname + "_" + "edgeHeatMap.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
 	VideoWriter write27("./results/" + vname + "_" + "ratioMean.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
 
-	//-- dcfg videos
-	//VideoWriter w1("./results/" + vname + "_" + "fgAndCandid.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), false);
-	//VideoWriter w2("./results/" + vname + "_" + "fgMask.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), false);
-	//VideoWriter w3("./results/" + vname + "_" + "heatMap.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
-	//VideoWriter w4("./results/" + vname + "_" + "debug.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
-	//VideoWriter w5("./results/" + vname + "_" + "flowField.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
-	//VideoWriter w6("./results/" + vname + "_" + "fgConfMap.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), false);
-	//VideoWriter w7("./results/" + vname + "_" + "watershed.avi", CV_FOURCC('M', 'P', '4', '2'), frameRate, frame.size(), true);
-
-
-	input = Mat(frame.rows, frame.cols, CV_32FC(3));
-	diff = Mat(frame.rows, frame.cols, CV_8UC1, cv::Scalar(0));
-	gfm->initialization(input);
-	gfm->setAlpha(0.004);
-
-	//-- skip frames
-	for (int i = 0; i < skipFrames; i++){
-		video >> frame;
-		pretrain >> frame;
-	}
-
-	//-- pretrain frames
-	for (int i = 0; i < preframes; i++){
-		pretrain >> frame;
-		if (frame.empty()){
-			break;
-		}
-		if (scale)
-			cv::resize(frame, frame, cv::Size(), 1.0 / scaleRate, 1.0 / scaleRate);
-		frame.convertTo(input, CV_32FC(3));
-		gfm->process(input, &fgMaskGFM, &bg, &diff);
-	}
 
 
 	//-- start timer
@@ -202,19 +159,14 @@ int main(int argc, char **argv) {
 		//======================================
 		//-- foreground segmentation methods
 		//======================================
-		frame.convertTo(input, CV_32FC(3));
-		gfm->process(input, &fgMaskGFM, &bg, &diff);
-		//dcfg->apply(frame, fgMaskDCFG, bg);
 		//pMOG->apply(frame, fgMaskMOG);
 		//pMOG2->apply(frame, fgMaskMOG2);
 		//pGMG->apply(frame, fgMaskGMG);
 		//pKNN->apply(frame, fgMaskKNN);
 		//pCNT->apply(frame, fgMaskCNT);
-		//pGSOC->apply(frame, fgMaskGSOC);
+		pGSOC->apply(frame, fgMaskGSOC);
 		//pLSBP->apply(frame, fgMaskLSBP);
 
-		//cv::medianBlur(fgMaskGFM, fgMaskGFM, 5);
-		//cv::medianBlur(fgMaskDCFG, fgMaskDCFG, 5);
 		//cv::medianBlur(fgMaskMOG2, fgMaskMOG2, 5);
 		//cv::medianBlur(fgMaskGMG, fgMaskGMG, 5);
 		//cv::medianBlur(fgMaskKNN, fgMaskKNN, 5);
@@ -230,12 +182,9 @@ int main(int argc, char **argv) {
 		//imshow("CNT", fgMaskCNT);
 		//imshow("GSOC", fgMaskGSOC);
 		//imshow("LSBP", fgMaskLSBP);
-		//imshow("GFM", fgMaskGFM);
-		//imshow("DCFG", fgMaskDCFG);
 		
 		//-- choose the foreground mask
-		fgMaskGFM.copyTo(mask);
-		//pGSOC->getBackgroundImage(bg);
+		pGSOC->getBackgroundImage(bg);
 		//--------------------------------------------------
 
 
@@ -250,10 +199,8 @@ int main(int argc, char **argv) {
 		//srTex.removeShadows(frame, mask, bg, srTexMask);
 		//lrTex.removeShadows(frame, mask, bg, lrTexMask);
 		//mulTex.removeShadows(frame, mask, bg, mulTexMask);
-		////shadow->removeShadows(frame, mask, bg, shadMask);
-		////shadow2->removeShadows(frame, mask, bg, shad2Mask);
 		//fgr(frame, bg, mask, fgrMask);
-		//msr->removeShadows(frame, mask, bg, msrMask);
+		msr->removeShadows(frame, mask, bg, msrMask);
 		
 
 		//-- timer
@@ -261,8 +208,6 @@ int main(int argc, char **argv) {
 		float t_diff_s((float)t2s - (float)t1s);
 		shadow_time_sum += t_diff_s;
 		//-------------
-
-		//cv::imshow("frame", frame);
 
 		
 		//-- just representation
@@ -324,16 +269,6 @@ int main(int argc, char **argv) {
 
 		write1 << bg;
 
-		//-- dcfg videos
-		//w1 << dcfg->fgAndCandid;
-		//w2 << dcfg->finalFG;
-		//w2 << fgMaskDCFG;
-		//w3 << dcfg->heatMap;
-		//w4 << dcfg->debugImg;
-		//w5 << dcfg->flowField;
-		//w6 << dcfg->fgConfMap;
-		//w7 << dcfg->watershedImage;
-		
 
 		//-- shadow videos
 		//write20 << msr->ratioRep;
@@ -377,16 +312,6 @@ int main(int argc, char **argv) {
 	write25.release();
 	write26.release();
 	write27.release();
-
-
-	//-- dcfg videos
-	//w1.release();
-	//w2.release();
-	//w3.release();
-	//w4.release();
-	//w5.release();
-	//w6.release();
-	//w7.release();
 
 
 	
