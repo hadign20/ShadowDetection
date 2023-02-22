@@ -40,10 +40,9 @@ int main(int argc, char **argv) {
 	std::clock_t t1, t2, t1s, t2s;
 	double shadow_time_sum = 0.0;
 
-	loadConfig("./Src/config/config.xml");
+	loadConfig("./config.xml");
 
 	Mat frame, bg, mask;
-	Mat img_blob;
 
 	//-- different shadow detections
 	cv::Mat chrMask, phyMask, geoMask, srTexMask, lrTexMask, mulTexMask, fgrMask, msrMask, hsvFrame;
