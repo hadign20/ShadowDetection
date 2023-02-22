@@ -2,6 +2,17 @@
 Implementation of paper **"Illumination-Aware Image Segmentation for Real-Time Moving Cast Shadow Suppression"**.
 2022 IEEE International Conference on Imaging Systems and Techniques (IST)
 
+* The program is tested on Windows 10 with OpenCV 3.4.1 in Release x64 mode. It should work with any version of OpenCV 3.
+* The .exe file needs one argument which is the path to the video file
+
+### How to run in Visual Studio
+1. setup Visual Studio with OpenCV ([guide](https://learnopencv.com/code-opencv-in-visual-studio/))
+2. add a folder called "results" next to main.cpp in the project directory
+3. set the desired parameters in config.xml and also in MovingShadRem.h
+4. add the path to the video file in Visual Studio > Project > Properties > Debugging > Command Arguments
+5. run the program
+
+
 ### Introduction
 One of the main challenges facing foreground detection methods is the performance deterioration due to shadows cast by moving objects. In this paper, a new real-time method is proposed that integrates various cues for region-wise classification to deal with achromaticity and camouflage issues in suppressing cast shadows. Specifically, after background subtraction, a locally near-invariant illumination feature is used as input for watershed segmentation approach to extract a number of superpixels. The superpixels are further merged according to three illumination criteria with the purpose of constructing segments that are locally homogeneous in terms of illumination variations. These segments are then classified according to the number of potential shadow candidates, gradient direction correlation, and the number of external boundary points. The potential shadow candidates are extracted by establishing a set of chromatic criteria in the HSV color-space. The gradient correlation is considered due to the fact that shadows do not impose considerable variations in the gradient directions. On the other hand, shadow segments contain a notable number of extrinsic boundary points which is used as an additional cue. Final shadow detection is achieved by integrating the outputs of the previous steps. The experimental results using publicly available videos from ATON dataset show the feasibility of our proposed method for real-time applications.
 
